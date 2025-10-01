@@ -27,5 +27,7 @@ model Task {
   created_at  DateTime   @default(now())
   due_date    DateTime?
   updated_at  DateTime   @updatedAt
+  views       Int        @default(0)
+  priority    Int        @default(0)
 }
 

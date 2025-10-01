@@ -3,11 +3,15 @@ import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { PrismaService } from 'prisma/prisma.service';
 import { TaskStatus } from '@prisma/client';
+import { RedisService } from 'src/redis/redis.service';
 
 @Injectable()
 export class TaskService {
 
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(
+    private readonly prisma: PrismaService,
+    private redisService: RedisService,
+  ) { }
 
   async create(data: CreateTaskDto) {
     return this.prisma.task.create({ data });
@@ -42,6 +46,29 @@ export class TaskService {
       where: { id },
       data: { status: TaskStatus.DONE },
     });
+  }
+
+  async getPopularTasks() {
+    const cacheKey = 'popular_tasks';
+
+    const cached = await this.redisService.get(cacheKey);
+    if (cached) {
+      console.log("From Cache");
+      return cached;
+    }
+
+    const tasks = await this.prisma.task.findMany({
+      orderBy: [
+        { priority: 'desc' },
+        { views: 'desc' }
+      ],
+      take: 5,
+    });
+
+    await this.redisService.set(cacheKey, tasks, 60);
+    
+    console.log("From DB, cached now");
+    return tasks;
   }
 
 }

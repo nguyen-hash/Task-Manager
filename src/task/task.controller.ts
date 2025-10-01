@@ -32,4 +32,9 @@ export class TaskController {
   remove(@Param('id') id: string) {
     return this.taskService.remove(id);
   }
+
+  @Get('popular')
+  async getPopularTasks() {
+    return this.taskService.getPopularTasks();
+  }
 }
